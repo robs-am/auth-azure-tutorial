@@ -12,20 +12,20 @@ interface ProfileDataProps {
   id: string;
 
 }
-export const ProfileData: React.FC<ProfileDataProps> = (props) => {
+export const ProfileData: React.FC<ProfileDataProps> = ({ givenName, surname, userPrincipalName, id }) => {
   return (
     <div id="profile-div">
       <p>
         <strong>First Name: </strong> {givenName}
       </p>
       <p>
-        <strong>Last Name: </strong> {props.graphData.surname}
+        <strong>Last Name: </strong> {surname}
       </p>
       <p>
-        <strong>Email: </strong> {props.graphData.userPrincipalName}
+        <strong>Email: </strong> {userPrincipalName}
       </p>
       <p>
-        <strong>Id: </strong> {props.graphData.id}
+        <strong>Id: </strong> {id}
       </p>
     </div>
   );

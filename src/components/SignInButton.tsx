@@ -1,5 +1,4 @@
-//@ts-nocheck
-
+import React from "react";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../authConfig";
 import DropdownButton from "react-bootstrap/DropdownButton";
@@ -10,22 +9,37 @@ import Dropdown from "react-bootstrap/Dropdown";
  * Note the [useMsal] package 
  */
 
+type LoginType = "popup" | "redirect";
 
-
-export const SignInButton = () => {
+export const SignInButton: React.FC = () => {
   const { instance } = useMsal();
 
-  const handleLogin = (loginType: "popup" | "redirect") => {
+  const handleLogin = (loginType: LoginType) => {
+    console.log(`[SignInButton] Login initiated with type: ${loginType}`);
+    console.log("[SignInButton] Current loginRequest:", loginRequest);
+
     if (loginType === "popup") {
-      instance.loginPopup(loginRequest).catch((e) => {
-        console.log(e);
-      });
+      instance
+        .loginPopup(loginRequest)
+        .then((response) => {
+          console.log("[SignInButton] Popup Login Successful:", response);
+        })
+        .catch((error) => {
+          console.error("[SignInButton] Popup Login Error:", error);
+        });
     } else if (loginType === "redirect") {
-      instance.loginRedirect(loginRequest).catch((e) => {
-        console.log(e);
-      });
+      instance
+        .loginRedirect(loginRequest)
+        .then(() => {
+          console.log("[SignInButton] Redirect Login Triggered. Awaiting response...");
+        })
+        .catch((error) => {
+          console.error("[SignInButton] Redirect Login Error:", error);
+        });
     }
-  }; return (
+  };
+
+  return (
     <DropdownButton
       variant="secondary"
       className="ml-auto"

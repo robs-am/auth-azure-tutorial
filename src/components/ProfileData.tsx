@@ -4,12 +4,20 @@
  * @param props
  */
 
+
+
 interface ProfileDataProps {
 
   givenName: string;
   surname: string;
   userPrincipalName: string;
   id: string;
+  graphData: {
+    givenName: string;
+    surname: string;
+    userPrincipalName: string;
+    id: string;
+  };
 
 }
 export const ProfileData: React.FC<ProfileDataProps> = ({ givenName, surname, userPrincipalName, id }) => {

@@ -1,55 +1,61 @@
-/**
-* Renders information about the signed-in user or a button to retrieve data about the user
-*/
-
-// @ts-nocheck
-
 import { useState } from 'react';
-
 import { PageLayout } from './components/PageLayout';
 import { loginRequest } from './authConfig';
-import { callMsGraph } from './graph';
-import { ProfileData } from './components/ProfileData';
-
+import { callMsGraph, GraphData } from './graph';
+import { ProfileData as ProfileDataComponent } from './components/ProfileData';
 import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from '@azure/msal-react';
-
 import './App.css';
-
 import Button from 'react-bootstrap/Button';
 
-export interface ProfileData {
-  displayName: string;
-  givenName: string;
-  surname: string;
-  userPrincipalName: string;
-  id: string;
-  graphData: ProfileData;
-}
+console.log("Environment Variables:", import.meta.env);
 
-
-
-/**
-* Renders information about the signed-in user or a button to retrieve data about the user
-*/
 const ProfileContent = () => {
   const { instance, accounts } = useMsal();
-  const [graphData, setGraphData] = useState<ProfileData | null>(null);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
 
-  function RequestProfileData() {
-    // Silently acquires an access token which is then attached to a request for MS Graph data
+  const RequestProfileData = () => {
+    // Verificar se há contas disponíveis
+    if (!accounts || accounts.length === 0) {
+      console.error("Nenhuma conta encontrada.");
+      return;
+    }
+
+    // Tentar obter o token de forma silenciosa
     instance.acquireTokenSilent({
       ...loginRequest,
-      account: accounts[0]
+      account: accounts[0] // Usar a primeira conta disponível
     }).then((response) => {
-      callMsGraph(response.accessToken).then((response: ProfileData) => setGraphData(response));
+      // Chamar a API Graph com o token de acesso
+      callMsGraph(response.accessToken).then((data) => setGraphData(data));
+    }).catch((error) => {
+      console.error("Erro ao obter token de forma silenciosa:", error);
+      // Caso falhe, tentamos um login interativo
+      instance.acquireTokenPopup({
+        ...loginRequest,
+        account: accounts[0]
+      }).then((response) => {
+        callMsGraph(response.accessToken).then((data) => setGraphData(data));
+      }).catch((popupError) => {
+        console.error("Erro ao obter token via popup:", popupError);
+      });
     });
-  }
+  };
 
   return (
     <div>
       <AuthenticatedTemplate>
-        <h5 className="card-title">Welcome {accounts[0].name}</h5>
-        {graphData ? <ProfileData graphData={graphData} /> : <Button onClick={RequestProfileData}>Request Profile Information</Button>}
+        <h5 className="card-title">Welcome {accounts[0]?.name}</h5>
+        {graphData ? (
+          <ProfileDataComponent
+            graphData={graphData}
+            givenName={graphData.givenName}
+            surname={graphData.surname}
+            userPrincipalName={graphData.userPrincipalName}
+            id={graphData.id}
+          />
+        ) : (
+          <Button onClick={RequestProfileData}>Request Profile Information</Button>
+        )}
       </AuthenticatedTemplate>
       <UnauthenticatedTemplate>
         <h5 className="card-title">Please sign-in to see your profile information.</h5>
@@ -58,12 +64,6 @@ const ProfileContent = () => {
   );
 };
 
-
-
-
-/**
-* If a user is authenticated the ProfileContent component above is rendered. Otherwise a message indicating a user is not authenticated is rendered.
-*/
 const MainContent = () => {
   return (
     <div className="App">
@@ -73,9 +73,7 @@ const MainContent = () => {
 
       <UnauthenticatedTemplate>
         <h5>
-          <center>
-            Please sign-in to see your profile information.
-          </center>
+          <center>Please sign-in to see your profile information.</center>
         </h5>
       </UnauthenticatedTemplate>
     </div>
